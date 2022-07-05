@@ -29,6 +29,8 @@ public abstract class JobBase : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            CancellationTokenRegistration? cancellationTokenRegistration = null;
+
             try
             {
                 await using var scope = _serviceScopeFactory.CreateAsyncScope();
@@ -48,7 +50,7 @@ public abstract class JobBase : BackgroundService
                     handle.HandleLostToken.CanBeCanceled ? "cancelable" : "uncancelable"
                 );
 
-                await using var _ = handle.HandleLostToken.Register(
+                cancellationTokenRegistration = handle.HandleLostToken.Register(
                     () => _logger.LogError("Lost lock.")
                 );
 
@@ -85,6 +87,13 @@ public abstract class JobBase : BackgroundService
                     exception.GetType(),
                     exception.Message
                 );
+            }
+            finally
+            {
+                if (cancellationTokenRegistration.HasValue)
+                {
+                    await cancellationTokenRegistration.Value.DisposeAsync();
+                }
             }
         }
     }
