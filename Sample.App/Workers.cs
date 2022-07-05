@@ -19,7 +19,7 @@ public abstract class JobBase : BackgroundService
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger _logger;
 
-    public JobBase(IServiceScopeFactory serviceScopeFactory, ILogger logger)
+    protected JobBase(IServiceScopeFactory serviceScopeFactory, ILogger logger)
     {
         _serviceScopeFactory = serviceScopeFactory;
         _logger = logger;
@@ -38,7 +38,7 @@ public abstract class JobBase : BackgroundService
                 var distributedLockProvider =
                     scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
 
-                _logger.LogInformation("Will try to acquire lock.");
+                _logger.LogInformation("Trying to acquire lock.");
 
                 await using var handle = await distributedLockProvider.AcquireLockAsync(
                     "a1416b2940b34bbb9189caaa13f11b1a",
@@ -68,11 +68,7 @@ public abstract class JobBase : BackgroundService
                 {
                     _logger.LogInformation("Doing stuff.");
 
-                    try
-                    {
-                        await Task.Delay(TimeSpan.FromSeconds(30), stoppingCts.Token);
-                    }
-                    catch (TaskCanceledException) { }
+                    await Delay(TimeSpan.FromSeconds(30), stoppingCts.Token);
 
                     if (!stoppingToken.IsCancellationRequested)
                     {
@@ -87,6 +83,11 @@ public abstract class JobBase : BackgroundService
                     exception.GetType(),
                     exception.Message
                 );
+
+                if (!stoppingToken.IsCancellationRequested)
+                {
+                    await Delay(TimeSpan.FromSeconds(3), stoppingToken);
+                }
             }
             finally
             {
@@ -96,5 +97,15 @@ public abstract class JobBase : BackgroundService
                 }
             }
         }
+    }
+
+    /// <inheritdoc cref="Task.Delay(TimeSpan, CancellationToken)"/>
+    private static async Task Delay(TimeSpan delay, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(delay, cancellationToken);
+        }
+        catch (TaskCanceledException) { }
     }
 }
