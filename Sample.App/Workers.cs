@@ -80,7 +80,11 @@ public abstract class JobBase : BackgroundService
             }
             catch (Exception exception)
             {
-                _logger.LogError("Exception {Exception} thrown.", exception.GetType());
+                _logger.LogError(
+                    "Exception {Exception} thrown:\n\r{Message}",
+                    exception.GetType(),
+                    exception.Message
+                );
             }
         }
     }
