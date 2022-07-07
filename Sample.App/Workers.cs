@@ -86,7 +86,7 @@ public abstract class JobBase : BackgroundService
 
                 if (!stoppingToken.IsCancellationRequested)
                 {
-                    await Delay(TimeSpan.FromSeconds(3), stoppingToken);
+                    await Delay(TimeSpan.FromSeconds(10), stoppingToken);
                 }
             }
             finally
